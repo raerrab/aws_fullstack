@@ -38,7 +38,7 @@ function uploadFile(fileToUpload) {
     .catch(function (error) {
         console.log('imageRoutes::uploadFile UPLOAD_IMAGE_LOCATION : '+fileToUpload);
         deleteLocalFiles(fileToUpload);
-        console.log('imageRoutes::uploadFile error' +response.data);
+        console.log('imageRoutes::uploadFile error' +error.data);
     });
   
   }
@@ -55,7 +55,7 @@ function uploadFile(fileToUpload) {
     }
 });
  
-router.get("/filteredImage", async (req, res) => {
+router.get("/filteredImage_v2", async (req, res) => {
 
     try {
         const url = req.query.image_url;
@@ -72,11 +72,11 @@ router.get("/filteredImage", async (req, res) => {
             blob.name = 'delete.jpeg';
             blob.lastModified = new Date();
 
-            const myFile = new File([blob], 'delete.jpeg', {
+            /*const myFile = new File([blob], 'delete.jpeg', {
                 type: blob.type,
             });
             console.log('imageRoutes::filteredImage Route: '+myFile);
-            console.log('imageRoutes::filteredImage Route: '+myFile.name); 
+            console.log('imageRoutes::filteredImage Route: '+myFile.name); */
 
             const DOWNLOADED_IMAGE_LOCATION = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
             console.log('imageRoutes::filteredImage Route DOWNLOADED_IMAGE_LOCATION: '+DOWNLOADED_IMAGE_LOCATION);
@@ -115,7 +115,7 @@ function filterAndupload(fileToUpload) {
 };
 
 
-router.get("/filteredImage_v2", async (req, res) => {
+router.get("/filteredImage", async (req, res) => {
     try {
             console.log('imageRoutes::filteredImage2 Route');
 
@@ -135,7 +135,3 @@ router.get("/filteredImage_v2", async (req, res) => {
     } 
 
 });
-
-
-
-
