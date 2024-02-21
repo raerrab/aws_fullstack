@@ -32,12 +32,12 @@ function uploadFile(fileToUpload) {
     })
     .then(function (response) {
           console.log('imageRoutes::uploadFile UPLOAD_IMAGE_LOCATION: '+fileToUpload);
-          deleteLocalFiles(fileToUpload);
+          //deleteLocalFiles(fileToUpload);
           console.log('imageRoutes::uploadFile success' +response.data);
     })
     .catch(function (error) {
         console.log('imageRoutes::uploadFile UPLOAD_IMAGE_LOCATION : '+fileToUpload);
-        deleteLocalFiles(fileToUpload);
+        //deleteLocalFiles(fileToUpload);
         console.log('imageRoutes::uploadFile error' +error.data);
     });
   
@@ -54,18 +54,23 @@ function uploadFile(fileToUpload) {
         res.status(500).send('Image upload failed')
     }
 });
+
+const waitForUploadtoComplete2 = (path, ms) => {
+
+    console.log( `imageRoutes::waitForUploadtoComplete2 path is:${path}` );
+
+    filterAndupload(path);
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
  
 router.get("/filteredImage_v2", async (req, res) => {
 
     try {
         const url = req.query.image_url;
-        console.log('imageRoutes::filteredImage Route url is: ', url);
+        console.log('imageRoutes::filteredImage_v2 Route url is: ', url);
 
-        const thisUrl = url;
-        console.log( 'imageRoutes::filteredImage Route thisUrl is: '+thisUrl );
-
-
-        fetch(thisUrl)
+        
+        fetch(url)
             .then(res => res.blob()) // Gets the response and returns it as a blob
                 .then(blob => 
         {
@@ -79,7 +84,7 @@ router.get("/filteredImage_v2", async (req, res) => {
             console.log('imageRoutes::filteredImage Route: '+myFile.name); */
 
             const DOWNLOADED_IMAGE_LOCATION = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
-            console.log('imageRoutes::filteredImage Route DOWNLOADED_IMAGE_LOCATION: '+DOWNLOADED_IMAGE_LOCATION);
+            console.log('imageRoutes::filteredImage_v2 Route DOWNLOADED_IMAGE_LOCATION: '+DOWNLOADED_IMAGE_LOCATION);
 
             new Response(blob).arrayBuffer()
             .then(arrayBuffer =>
@@ -88,11 +93,25 @@ router.get("/filteredImage_v2", async (req, res) => {
                     fs.writeFileSync(DOWNLOADED_IMAGE_LOCATION, Buffer.from(arrayBuffer));
 
                     const UPLOAD_IMAGE_LOCATION = DOWNLOADED_IMAGE_LOCATION;
-                    console.log('imageRoutes::filteredImage Route UPLOAD_IMAGE_LOCATION: '+UPLOAD_IMAGE_LOCATION);
-                    uploadFile(UPLOAD_IMAGE_LOCATION);
+                    console.log('imageRoutes::filteredImage_v2 Route UPLOAD_IMAGE_LOCATION: '+UPLOAD_IMAGE_LOCATION);
+                    
+                    waitForUploadtoComplete2(UPLOAD_IMAGE_LOCATION, 5000);
                 });
 
-                return res.status(200).send('Image S3 Upload Success ');
+
+                const absolutePath = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
+                console.log( "imageRoutes::filteredImage absolutePath: " + absolutePath);
+
+                res.sendFile(absolutePath, {}, async (err) => {
+                    if (err) {
+                        next(err);
+                    } else {
+                        // delete local files and return success
+                        //await deleteLocalFiles(absolutePath);
+                        await deleteLocalFiles([absolutePath]);
+                        return res.status(200);
+                    }
+                });
         });
 
     }
@@ -111,23 +130,42 @@ function filterAndupload(fileToUpload) {
         const UPLOAD_IMAGE_LOCATION = DOWNLOADED_IMAGE_LOCATION;
         console.log('imageRoutes::filterAndupload UPLOAD_IMAGE_LOCATION: '+UPLOAD_IMAGE_LOCATION);
         uploadFile(UPLOAD_IMAGE_LOCATION);
+
+        //return UPLOAD_IMAGE_LOCATION;
     })
+};
+
+const waitForUploadtoComplete = (url, ms) => { // No need to make this async
+
+    console.log( `imageRoutes::waitForUpload url is:${url}` );
+
+    filterAndupload(url);
+    return new Promise(resolve => setTimeout(resolve, ms));
 };
 
 
 router.get("/filteredImage", async (req, res) => {
     try {
-            console.log('imageRoutes::filteredImage2 Route');
+            console.log('imageRoutes::filteredImage Route');
 
             const url = req.query.image_url;
-            console.log( `imageRoutes::filteredImage2 url is:${url}` );
+            console.log( `imageRoutes::filteredImage url is:${url}` );
 
-            const thisUrl = url;
-            console.log( `imageRoutes::filteredImage2 thisUrl is:`+thisUrl );
+            await waitForUploadtoComplete(url, 5000);
 
-            filterAndupload(thisUrl);
+            const absolutePath = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
+            console.log( "imageRoutes::filteredImage absolutePath: " + absolutePath);
 
-            return res.status(200).send('Image S3 Upload Success');
+            res.sendFile(absolutePath, {}, async (err) => {
+                if (err) {
+                    next(err);
+                } else {
+                    // delete local files and return success
+                    //await deleteLocalFiles(absolutePath);
+                    await deleteLocalFiles([absolutePath]);
+                    return res.status(200);
+                }
+            });
     }
     catch(error){
         console.error("imageRoutes::filteredImage S3 upload error", error)
