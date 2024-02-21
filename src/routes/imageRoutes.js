@@ -55,11 +55,17 @@ function uploadFile(fileToUpload) {
     }
 });
 
+function sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
 const waitForUploadtoComplete2 = (path, ms) => {
 
     console.log( `imageRoutes::waitForUploadtoComplete2 path is:${path}` );
 
-    filterAndupload(path);
+    filterAndupload2(path);
     return new Promise(resolve => setTimeout(resolve, ms));
 };
  
@@ -86,35 +92,35 @@ router.get("/filteredImage_v2", async (req, res) => {
             const DOWNLOADED_IMAGE_LOCATION = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
             console.log('imageRoutes::filteredImage_v2 Route DOWNLOADED_IMAGE_LOCATION: '+DOWNLOADED_IMAGE_LOCATION);
 
+            
             new Response(blob).arrayBuffer()
             .then(arrayBuffer =>
                 {
-                    //fs.writeFileSync('C:\\Users\\topgun\\rajtest.jpg', Buffer.from(arrayBuffer));
                     fs.writeFileSync(DOWNLOADED_IMAGE_LOCATION, Buffer.from(arrayBuffer));
 
                     const UPLOAD_IMAGE_LOCATION = DOWNLOADED_IMAGE_LOCATION;
                     console.log('imageRoutes::filteredImage_v2 Route UPLOAD_IMAGE_LOCATION: '+UPLOAD_IMAGE_LOCATION);
-                    
-                    waitForUploadtoComplete2(UPLOAD_IMAGE_LOCATION, 5000);
-                });
-
-
-                const absolutePath = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
-                console.log( "imageRoutes::filteredImage absolutePath: " + absolutePath);
-
-                res.sendFile(absolutePath, {}, async (err) => {
-                    if (err) {
-                        next(err);
-                    } else {
-                        // delete local files and return success
-                        //await deleteLocalFiles(absolutePath);
-                        await deleteLocalFiles([absolutePath]);
-                        return res.status(200);
-                    }
                 });
         });
 
-    }
+        
+        await sleep(1000);
+
+        
+        const absolutePath = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
+        await waitForUploadtoComplete2(absolutePath, 5000);
+    
+        console.log( "imageRoutes::filteredImage absolutePath: " + absolutePath);
+        const absPath = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
+        res.sendFile(absPath, {}, async (err) => {
+                if (err) {
+                        next(err);
+                } else {
+                        await deleteLocalFiles([absolutePath]);
+                        return res.status(200);
+                }
+        });
+    }   
     catch(error){
         console.error("imageRoutes::filteredImage S3 upload error", error)
         return res.status(500).send("Error occured")
@@ -129,6 +135,20 @@ function filterAndupload(fileToUpload) {
         console.log('imageRoutes::filterAndupload DOWNLOADED_IMAGE_LOCATION: '+DOWNLOADED_IMAGE_LOCATION);
         const UPLOAD_IMAGE_LOCATION = DOWNLOADED_IMAGE_LOCATION;
         console.log('imageRoutes::filterAndupload UPLOAD_IMAGE_LOCATION: '+UPLOAD_IMAGE_LOCATION);
+        uploadFile(UPLOAD_IMAGE_LOCATION);
+
+        //return UPLOAD_IMAGE_LOCATION;
+    })
+};
+
+function filterAndupload2(fileToUpload) {
+    console.log('imageRoutes::filterAndupload2 fileToUpload::'+fileToUpload);
+    filterImageFromURL(fileToUpload)
+    .then(function (response) {
+        const DOWNLOADED_IMAGE_LOCATION = process.env.LOCATION_OF_DOWNLOADED_IMAGE;
+        console.log('imageRoutes::filterAndupload2 DOWNLOADED_IMAGE_LOCATION: '+DOWNLOADED_IMAGE_LOCATION);
+        const UPLOAD_IMAGE_LOCATION = DOWNLOADED_IMAGE_LOCATION;
+        console.log('imageRoutes::filterAndupload2 UPLOAD_IMAGE_LOCATION: '+UPLOAD_IMAGE_LOCATION);
         uploadFile(UPLOAD_IMAGE_LOCATION);
 
         //return UPLOAD_IMAGE_LOCATION;
