@@ -33,12 +33,12 @@ export async function  filterImageFromURL(inputURL) {
   });
 }
 
-// deleteLocalFiles
+// deleteLocalFile
 // helper function to delete files on the local disk
 // useful to cleanup after tasks
 // INPUTS
 //    files: Array<string> an array of absolute paths to files
-export async function deleteLocalFiles(file) {
+export async function deleteLocalFiles1(file) {
   console.log('Inside deleteLocalFiles' +file);
 
   fs.unlink(file, function(err)  {
@@ -47,6 +47,22 @@ export async function deleteLocalFiles(file) {
     console.log('File deleted!');
    });
 }
+
+// deleteLocalFiles
+// helper function to delete files on the local disk
+// useful to cleanup after tasks
+// INPUTS
+//    files: Array<string> an array of absolute paths to files
+export async function deleteLocalFiles(files) {
+  for (let file of files) {
+    fs.unlink(file, function(err)  {
+      if(err) throw err;
+  
+      console.log('File deleted!');
+
+      });
+    }
+  }
 
 
 
